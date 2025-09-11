@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>语音金书 - 书库</title>
+<style>
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: linear-gradient(135deg, #1a1a2e, #533483);
+  color: #fff;
+  text-align: center;
+  padding: 20px;
+}
+h1 {
+  font-size: 2.2rem;
+  margin-bottom: 20px;
+  background: linear-gradient(to right, #41D1FF, #FFEA83, #BD34FE);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.book {
+  background: rgba(255,255,255,0.1);
+  margin: 12px auto;
+  padding: 16px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  cursor: pointer;
+  transition: transform 0.2s, border 0.2s;
+}
+.book:hover {
+  transform: scale(1.03);
+  border: 2px solid #FFD700;
+}
+.btns {
+  margin-top: 10px;
+}
+button {
+  margin: 4px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.read-btn {
+  background: #4CAF50;
+  color: white;
+}
+.read-btn:hover { background: #45a049; }
+.audio-btn {
+  background: #2196F3;
+  color: white;
+}
+.audio-btn:hover { background: #1976D2; }
+</style>
+</head>
+<body>
+  <!-- 返回按钮 -->
+<button class="back-btn" onclick="goBack()">⬅ 返回</button>
+
+<script>
+function goBack() {
+if (document.referrer && document.referrer !== window.location.href) {
+// 有来源页面 → 返回上一页
+history.back();
+} else {
+// 没有来源（例如直接打开页面）→ 回到首页
+window.location.href = "home.html";
+// 把 "home.html" 改成你自己的首页路径
+}
+}
+</script>
+
+<style>
+.back-btn {
+position: fixed;
+top: 15px;
+left: 15px;
+background: #2196F3;
+color: white;
+border: none;
+padding: 10px 16px;
+font-size: 16px;
+border-radius: 8px;
+cursor: pointer;
+z-index: 9999;
+box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+.back-btn:hover {
+background: #1976D2;
+}
+</style>
+
+<h1>📚 语音金书 - 书库</h1>
+<div id="book-list"></div>
+
+<script>
+// ========== 📌 书籍列表（在这里添加新的书籍） ==========
+// 如果要增加 book4，就在下面数组中加一行 { file: "assets/book4.json" }
+const books = [
+  { file: "assets/book1.json" },
+  { file: "assets/book2.json" },
+  { file: "assets/book3.json" } // ✅ 第三本书
+];
+
+// 动态加载 JSON 文件并显示
+const container = document.getElementById("book-list");
+
+books.forEach(b => {
+  fetch(b.file)
+    .then(res => res.json())
+    .then(data => {
+      const div = document.createElement("div");
+      div.className = "book";
+
+      // 显示书籍标题 + 描述
+      div.innerHTML = `
+        <h2>${data.title}</h2>
+        <p>${data.desc || "📖 点击下方按钮阅读/听书"}</p>
+        <div class="btns">
+          <button class="read-btn" onclick="openReader('${b.file}')">📖 阅读</button>
+          <button class="audio-btn" onclick="openAudio('${b.file}')">⏩ 听书加速</button>
+        </div>
+      `;
+      container.appendChild(div);
+    })
+    .catch(err => console.error("加载失败:", err));
+});
+
+// 📖 阅读模式 → 跳到 reader.html
+function openReader(file) {
+  window.location.href = "reader.html?file=" + file;
+}
+
+// 🎧 听书模式 → 跳到 audiobook.html
+// 在 audiobook.html 里要实现“加速播放”功能
+function openAudio(file) {
+  window.location.href = "audiobook.html?file=" + file + "&speed=1.5"; 
+  // 默认 1.5 倍速
+}
+</script>
+
+</body>
+</html>
