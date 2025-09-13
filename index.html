@@ -31,8 +31,6 @@
       box-shadow:0 0 20px rgba(0,255,100,0.5);
       text-align:center;
       width:280px;
-      position:relative;
-      overflow:hidden;
     }
 
     .logo {margin-bottom:15px;}
@@ -82,21 +80,7 @@
     }
     .btn-create:hover {background:red;color:white;box-shadow:0 0 20px red;}
 
-    /* Smooth fade animation */
-    .form-box {
-      opacity:0;
-      transform:translateY(20px);
-      pointer-events:none;
-      transition:all 0.5s ease;
-      position:absolute;
-      top:0;left:0;
-      width:100%;
-    }
-    .form-box.active {
-      opacity:1;
-      transform:translateY(0);
-      pointer-events:auto;
-    }
+    #createForm {display:none;margin-top:20px;}
   </style>
 </head>
 <body>
@@ -107,17 +91,17 @@
       <img src="https://i.postimg.cc/DwzYYTWD/logo.webp" alt="Logo">
     </div>
 
-    <!-- Login form -->
-    <div id="loginForm" class="form-box active">
-      <h2>登录</h2>
+    <!-- 登录区域 -->
+    <div id="loginSection">
+      <h2>Login</h2>
       <input type="email" id="loginEmail" placeholder="Email">
       <input type="password" id="loginPassword" placeholder="Password">
       <button class="btn btn-login" onclick="login()">登录</button>
-      <button class="btn btn-create" onclick="showSignup()">创建新用户</button>
+      <button class="btn btn-create" onclick="promptCreate()">创建新用户</button>
     </div>
 
-    <!-- Signup form -->
-    <div id="createForm" class="form-box">
+    <!-- 创建用户表单 -->
+    <div id="createForm">
       <h2>新用户填写以下信息</h2>
       <input type="text" id="signupName" placeholder="姓名">
       <input type="email" id="signupEmail" placeholder="邮箱">
@@ -131,7 +115,6 @@
       </select>
       <input type="tel" id="signupPhone" placeholder="手机号码">
       <button class="btn btn-create" onclick="confirmSignup()">确认</button>
-      <button class="btn btn-login" onclick="showLogin()">返回登录</button>
     </div>
   </div>
 
@@ -141,7 +124,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <script>
-    // Firebase config
+    // ✅ Your Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyBCIVYd8e5vBeGRz-H12Nj9hd5dyqnZCDI",
       authDomain: "guardiangate-7xkgi.firebaseapp.com",
@@ -150,20 +133,20 @@
       messagingSenderId: "133766737758",
       appId: "1:133766737758:web:38de135254fef4664769cf"
     };
+
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // Toggle forms
-    function showSignup() {
-      document.getElementById("loginForm").classList.remove("active");
-      document.getElementById("createForm").classList.add("active");
-    }
-    function showLogin() {
-      document.getElementById("createForm").classList.remove("active");
-      document.getElementById("loginForm").classList.add("active");
+    // 🔹 点击创建新用户按钮时
+    function promptCreate() {
+      if (confirm("⚡ 你确定要创建一个新用户吗？")) {
+        document.getElementById("loginSection").style.display = "none"; // 隐藏登录
+        document.getElementById("createForm").style.display = "block"; // 显示注册
+      }
     }
 
+    // 🔹 二次确认提交
     function confirmSignup() {
       const name = document.getElementById("signupName").value;
       const email = document.getElementById("signupEmail").value;
@@ -173,40 +156,57 @@
       const phone = document.getElementById("signupPhone").value;
 
       if (!name || !email || !password || !age || !gender || !phone) {
-        alert("⚠️ Please fill all fields!");
+        alert("⚠️ 请完整填写所有信息！");
         return;
       }
-      signup(name, email, password, age, gender, phone);
+
+      const confirmText =
+        "请确认以下信息:\n\n" +
+        "👤 姓名: " + name + "\n" +
+        "📧 邮箱: " + email + "\n" +
+        "🔑 密码: " + "*".repeat(password.length) + "\n" +
+        "🎂 年龄: " + age + "\n" +
+        "⚧ 性别: " + gender + "\n" +
+        "📱 手机: " + phone + "\n\n" +
+        "是否确认创建账号？";
+
+      if (confirm(confirmText)) {
+        signup(name, email, password, age, gender, phone);
+      }
     }
 
+    // 🔹 Firebase 创建账号
     async function signup(name, email, password, age, gender, phone) {
       try {
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
         const user = userCredential.user;
+
         await db.collection("users").doc(user.uid).set({
           name, email, age, gender, phone,
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
-        alert("✅ Account created!");
-        window.location.href = "home.html";
-      } catch (err) {
-        alert("❌ " + err.message);
+
+        alert("✅ 账号创建成功！");
+        window.location.href = "home.html"; // 跳转主页
+      } catch (error) {
+        alert("❌ " + error.message);
       }
     }
 
+    // 🔹 Firebase 登录
     async function login() {
       const email = document.getElementById("loginEmail").value;
       const password = document.getElementById("loginPassword").value;
       try {
         await auth.signInWithEmailAndPassword(email, password);
-        alert("✅ Login successful!");
+        alert("✅ 登录成功！");
         window.location.href = "home.html";
-      } catch (err) {
-        alert("❌ " + err.message);
+      } catch (error) {
+        alert("❌ " + error.message);
       }
     }
 
-    // Matrix background
+    // 🔹 矩阵黑客背景
     const canvas = document.getElementById("matrix");
     const ctx = canvas.getContext("2d");
     canvas.height = window.innerHeight;
@@ -215,6 +215,7 @@
     const fontSize = 14;
     const columns = canvas.width / fontSize;
     const drops = Array(Math.floor(columns)).fill(1);
+
     function draw() {
       ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -223,7 +224,9 @@
       for (let i = 0; i < drops.length; i++) {
         const text = letters.charAt(Math.floor(Math.random() * letters.length));
         ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+          drops[i] = 0;
+        }
         drops[i]++;
       }
     }
