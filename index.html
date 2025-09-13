@@ -31,6 +31,8 @@
       box-shadow:0 0 20px rgba(0,255,100,0.5);
       text-align:center;
       width:280px;
+      position:relative;
+      overflow:hidden;
     }
 
     .logo {margin-bottom:15px;}
@@ -80,7 +82,21 @@
     }
     .btn-create:hover {background:red;color:white;box-shadow:0 0 20px red;}
 
-    #createForm {display:none;margin-top:20px;}
+    /* Smooth fade animation */
+    .form-box {
+      opacity:0;
+      transform:translateY(20px);
+      pointer-events:none;
+      transition:all 0.5s ease;
+      position:absolute;
+      top:0;left:0;
+      width:100%;
+    }
+    .form-box.active {
+      opacity:1;
+      transform:translateY(0);
+      pointer-events:auto;
+    }
   </style>
 </head>
 <body>
@@ -91,14 +107,17 @@
       <img src="https://i.postimg.cc/DwzYYTWD/logo.webp" alt="Logo">
     </div>
 
-    <h2>Login</h2>
-    <input type="email" id="loginEmail" placeholder="Email">
-    <input type="password" id="loginPassword" placeholder="Password">
-    <button class="btn btn-login" onclick="login()">登录</button>
+    <!-- Login form -->
+    <div id="loginForm" class="form-box active">
+      <h2>登录</h2>
+      <input type="email" id="loginEmail" placeholder="Email">
+      <input type="password" id="loginPassword" placeholder="Password">
+      <button class="btn btn-login" onclick="login()">登录</button>
+      <button class="btn btn-create" onclick="showSignup()">创建新用户</button>
+    </div>
 
-    <button class="btn btn-create" onclick="toggleCreate()">创建新用户</button>
-
-    <div id="createForm">
+    <!-- Signup form -->
+    <div id="createForm" class="form-box">
       <h2>新用户填写以下信息</h2>
       <input type="text" id="signupName" placeholder="姓名">
       <input type="email" id="signupEmail" placeholder="邮箱">
@@ -112,6 +131,7 @@
       </select>
       <input type="tel" id="signupPhone" placeholder="手机号码">
       <button class="btn btn-create" onclick="confirmSignup()">确认</button>
+      <button class="btn btn-login" onclick="showLogin()">返回登录</button>
     </div>
   </div>
 
@@ -121,7 +141,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <script>
-    // ✅ Your Firebase config
+    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyBCIVYd8e5vBeGRz-H12Nj9hd5dyqnZCDI",
       authDomain: "guardiangate-7xkgi.firebaseapp.com",
@@ -130,18 +150,20 @@
       messagingSenderId: "133766737758",
       appId: "1:133766737758:web:38de135254fef4664769cf"
     };
-
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // Toggle signup form
-    function toggleCreate() {
-      const form = document.getElementById("createForm");
-      form.style.display = form.style.display === "none" ? "block" : "none";
+    // Toggle forms
+    function showSignup() {
+      document.getElementById("loginForm").classList.remove("active");
+      document.getElementById("createForm").classList.add("active");
+    }
+    function showLogin() {
+      document.getElementById("createForm").classList.remove("active");
+      document.getElementById("loginForm").classList.add("active");
     }
 
-    // Confirm before creating account
     function confirmSignup() {
       const name = document.getElementById("signupName").value;
       const email = document.getElementById("signupEmail").value;
@@ -154,54 +176,37 @@
         alert("⚠️ Please fill all fields!");
         return;
       }
-
-      const confirmText =
-        "Please confirm your details:\n\n" +
-        "👤 Name: " + name + "\n" +
-        "📧 Email: " + email + "\n" +
-        "🔑 Password: " + "*".repeat(password.length) + "\n" +
-        "🎂 Age: " + age + "\n" +
-        "⚧ Gender: " + gender + "\n" +
-        "📱 Phone: " + phone + "\n\n" +
-        "Do you want to create this account?";
-
-      if (confirm(confirmText)) {
-        signup(name, email, password, age, gender, phone);
-      }
+      signup(name, email, password, age, gender, phone);
     }
 
-    // Signup with Firebase
     async function signup(name, email, password, age, gender, phone) {
       try {
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
         const user = userCredential.user;
-
         await db.collection("users").doc(user.uid).set({
           name, email, age, gender, phone,
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
-
-        alert("✅ Account created successfully!");
-        window.location.href = "home.html"; // redirect
-      } catch (error) {
-        alert("❌ " + error.message);
+        alert("✅ Account created!");
+        window.location.href = "home.html";
+      } catch (err) {
+        alert("❌ " + err.message);
       }
     }
 
-    // Login with Firebase
     async function login() {
       const email = document.getElementById("loginEmail").value;
       const password = document.getElementById("loginPassword").value;
       try {
         await auth.signInWithEmailAndPassword(email, password);
         alert("✅ Login successful!");
-        window.location.href = "home.html"; // redirect
-      } catch (error) {
-        alert("❌ " + error.message);
+        window.location.href = "home.html";
+      } catch (err) {
+        alert("❌ " + err.message);
       }
     }
 
-    // Matrix hacker background
+    // Matrix background
     const canvas = document.getElementById("matrix");
     const ctx = canvas.getContext("2d");
     canvas.height = window.innerHeight;
@@ -210,7 +215,6 @@
     const fontSize = 14;
     const columns = canvas.width / fontSize;
     const drops = Array(Math.floor(columns)).fill(1);
-
     function draw() {
       ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -219,9 +223,7 @@
       for (let i = 0; i < drops.length; i++) {
         const text = letters.charAt(Math.floor(Math.random() * letters.length));
         ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-          drops[i] = 0;
-        }
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
         drops[i]++;
       }
     }
